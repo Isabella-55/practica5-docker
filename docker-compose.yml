@@ -1,0 +1,50 @@
+services:
+  mongo:
+    image: mongo:6
+    container_name: mongo_container
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+    ports:
+      - "27017:27017"
+    networks:
+      - app_network
+
+  backend:
+    build: ./APPSC
+    container_name: backend_container
+    restart: always
+    command: ["node", "src/index.js"]
+    volumes:
+      - ./APPSC:/usr/src/app
+      - /usr/src/app/node_modules
+    working_dir: /usr/src/app
+    environment:
+      MONGO_URI: "mongodb://admin:password123@mongo:27017/appdb?authSource=admin"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongo
+    networks:
+      - app_network
+
+  frontend:
+    build: ./FAPPSC
+    container_name: frontend_container
+    restart: always
+    command: ["npm", "run", "dev", "--", "--host"]
+    volumes:
+      - ./FAPPSC:/usr/src/app
+      - /usr/src/app/node_modules
+    working_dir: /usr/src/app
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge
